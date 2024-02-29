@@ -1,0 +1,86 @@
+					  
+import robocode.AdvancedRobot;
+import robocode.RobotInfo;
+
+import java.util.Arrays;
+
+public class MyBot extends AdvancedRobot {
+
+    private RobotInfo target;
+
+    @Override
+    public void run() {
+        while (true) {
+            // Scan for enemies
+            RobotInfo[] enemies = scanActiveRobots();
+
+            // Check if any enemies are found
+            if (enemies.length > 0) {
+                // Get the closest enemy
+                target = Arrays.stream(enemies)
+                        .min(this::compareDistance)
+                        .orElseThrow();
+
+                // Calculate the bearing to the predicted future location of the enemy
+                double predictedEnemyX = target.getX() + target.getVelocity() * Math.sin(Math.toRadians(target.getHeading()));
+                double predictedEnemyY = target.getY() + target.getVelocity() * Math.cos(Math.toRadians(target.getHeading()));
+                double enemyBearing = getHeading() - getBearing(predictedEnemyX, predictedEnemyY);
+
+                // Turn gun towards the predicted future location of the enemy
+                setTurnGunRight(normalizeBearing(enemyBearing));
+
+                // Adjust power based on distance and enemy energy
+                double firePower = calculateFirePower(target);
+
+                // Fire!
+                if (getGunHeat() == 0) {
+                    setFire(firePower);
+                }
+
+                // Move towards the predicted future location of the enemy (replace with your desired movement strategy)
+                setAhead(getDistance(predictedEnemyX, predictedEnemyY) - 150);
+            } else {
+                // No enemies detected, move around the battlefield (replace with your strategy)
+                setTurnRight(45);
+                setAhead(100);
+            }
+        }
+    }
+
+    // Helper method to compare RobotInfo objects based on distance
+    private int compareDistance(RobotInfo a, RobotInfo b) {
+        return Double.compare(getDistance(a), getDistance(b));
+    }
+
+    // Helper method to calculate normalized bearing between -180 and 180 degrees
+    private double normalizeBearing(double angle) {
+        return Math.floorMod((long) angle + 180, 360) - 180;
+    }
+
+    // Helper method to calculate fire power based on distance and enemy energy
+    private double calculateFirePower(RobotInfo enemy) {
+        double dist= getDistance(enemy);
+        double energy = enemy.getEnergy();
+
+        // Adjust power based on distance and enemy energy
+        double firePower = Math.min(3.0, Math.max(0.1, distance / 200));
+
+        // Increase power if enemy has low energy
+        if (energy < 20) {
+            firePower = Math.min(3.0, firePower + 0.5);
+        }
+
+        return firePower;
+    }
+
+    // Helper method to calculate bearing to a given point
+    private double getBearing(double x, double y) {
+        double angle = Math.toDegrees(Math.atan2(x - getX(), y - getY()));
+        return normalizeBearing(angle - getHeading());
+    }
+
+    // Helper method to calculate distance to a given point
+    private double getDistance(double x, double y) {
+        return Math.hypot(x - getX(), y - getY());
+    }
+}
