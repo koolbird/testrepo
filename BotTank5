@@ -1,18 +1,17 @@
 import dev.robocode.tankroyale.botapi.Bot;
-import dev.robocode.tankroyale.botapi.RobotInfo;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
 public class MyBot extends Bot {
 
-    private RobotInfo target;
+    private Bot target;
 
     @Override
     public void run() {
         while (true) {
             // Scan for enemies
-            RobotInfo[] enemies = scan();
+            Bot[] enemies = scan();
 
             // Check if any enemies are found
             if (enemies.length > 0) {
@@ -47,8 +46,8 @@ public class MyBot extends Bot {
         }
     }
 
-    // Helper method to compare RobotInfo objects based on distance
-    private RobotInfo getClosestEnemy(RobotInfo[] enemies) {
+    // Helper method to compare Bot objects based on distance
+    private Bot getClosestEnemy(Bot[] enemies) {
         return Arrays.stream(enemies)
                 .min(Comparator.comparingDouble(this::getDistance))
                 .orElseThrow();
@@ -60,7 +59,7 @@ public class MyBot extends Bot {
     }
 
     // Helper method to calculate fire power based on distance and enemy energy
-    private double calculateFirePower(RobotInfo enemy) {
+    private double calculateFirePower(Bot enemy) {
         double distance = getDistance(enemy);
         double energy = enemy.getEnergy();
 
