@@ -1,0 +1,79 @@
+import dev.robocode.tankroyale.botapi.*;
+import dev.robocode.tankroyale.botapi.events.*;
+
+public class MyEnhancedBot extends Bot {
+
+    // The main method starts our bot
+    public static void main(String[] args) {
+        new MyEnhancedBot().start();
+    }
+
+    // Constructor, which loads the bot config file
+    MyEnhancedBot() {
+        super(BotInfo.fromFile("MyEnhancedBot.json"));
+    }
+
+    // Called when a new round is started -> initialize and do some movement
+    @Override
+    public void run() {
+        while (isRunning()) {
+            // Advanced movement strategy (replace with your desired strategy)
+            orbit();
+        }
+    }
+
+    // Advanced movement: Orbiting
+    private void orbit() {
+        setTurnRight(45);
+        setAhead(100);
+        turnGunRight(360);
+        setBack(100);
+        turnGunRight(360);
+    }
+
+    // We saw another bot -> fire!
+    @Override
+    public void onScannedBot(ScannedBotEvent e) {
+        // Predictive targeting
+        double predictedEnemyX = getX() + e.getDistance() * Math.sin(Math.toRadians(e.getBearing()));
+        double predictedEnemyY = getY() + e.getDistance() * Math.cos(Math.toRadians(e.getBearing()));
+        double enemyBearing = getHeading() - getBearing(predictedEnemyX, predictedEnemyY);
+
+        // Turn gun towards the predicted future location of the enemy
+        setTurnGunRight(normalizeBearing(enemyBearing));
+
+        // Adjust power based on distance and enemy energy (replace with your own method)
+        double firePower = calculateFirePower(e.getDistance());
+
+        // Fire!
+        if (getGunHeat() == 0) {
+            fire(firePower);
+        }
+    }
+
+    // We were hit by a bullet -> turn perpendicular to the bullet
+    @Override
+    public void onHitByBullet(HitByBulletEvent e) {
+        // Calculate the bearing to the direction of the bullet
+        double bearing = calcBearing(e.getBullet().getDirection());
+
+        // Turn 90 degrees to the bullet direction based on the bearing
+        turnLeft(90 - bearing);
+    }
+
+    // Helper method to calculate bearing to a given point
+    private double getBearing(double x, double y) {
+        double angle = Math.toDegrees(Math.atan2(x - getX(), y - getY()));
+        return normalizeBearing(angle - getHeading());
+    }
+
+    // Helper method to calculate normalized bearing between -180 and 180 degrees
+    private double normalizeBearing(double angle) {
+        return Math.floorMod((long) angle + 180, 360) - 180;
+    }
+
+    // Helper method to calculate fire power based on distance (replace with your own method)
+    private double calculateFirePower(double distance) {
+        return Math.min(3.0, Math.max(0.1, distance / 200));
+    }
+}
